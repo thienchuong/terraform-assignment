@@ -1,0 +1,56 @@
+name: "Terraform apply"
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  TF_VERSION: 1.10.2
+  AWS_REGION: ap-southeast-1
+  ROLE-TO-ASSUME: arn:aws:iam::267583709295:role/Terraform
+
+jobs:
+  terraform:
+    permissions: write-all
+    name: "Terraform apply"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Use AssumeRoleWithWebIdentity to assume role no need to use access key and secret key
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE-TO-ASSUME }}
+      
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            dev:
+              - 'env/dev/**'
+      
+      - name: AWS dev resources deploy
+        if: steps.changes.outputs.dev == 'true'
+        working-directory: env/dev
+        run: |
+          terraform init
+          terraform plan -no-color
+          terraform apply -auto-approve
+  
+    #   - name: AWS dev resources destroy
+    #     if: steps.changes.outputs.dev == 'true'
+    #     run: |
+    #       cd env/dev-ap-southeast-1
+    #       terraform init
+    #       terraform plan -no-color
+    #       terraform destroy -auto-approve

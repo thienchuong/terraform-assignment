@@ -1,0 +1,58 @@
+name: "Terraform check"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  TF_VERSION: 1.10.2
+  AWS_REGION: ap-southeast-1
+  ROLE-TO-ASSUME: arn:aws:iam::267583709295:role/Terraform # manual created role in aws IAM ROLE (this is egg and chicker problem :D)
+
+jobs:
+  terraform:
+    permissions: write-all
+    name: "Terraform plan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      # Use AssumeRoleWithWebIdentity to assume role no need to use access key and secret key
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE-TO-ASSUME }}
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            dev:
+              - 'env/dev/**'
+      
+
+      - name: AWS dev resources init
+        if: steps.changes.outputs.dev == 'true'
+        id: dev-init
+        working-directory: env/dev
+        run: terraform init
+
+      - name: AWS dev resources validate
+        if: steps.changes.outputs.dev == 'true'
+        id: dev-validate
+        working-directory: env/dev
+        run: terraform validate
+
+      - name: AWS dev resources plan
+        if: steps.changes.outputs.dev == 'true'
+        id: dev-plan
+        working-directory: env/dev
+        run: terraform plan
