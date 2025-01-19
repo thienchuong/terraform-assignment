@@ -1,5 +1,3 @@
-# terraform-assignment
-
 ## Repo structure
 ```
 .
