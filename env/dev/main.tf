@@ -36,5 +36,6 @@ module "skeleton" {
   ]
   sns_topic_arn       = "arn:aws:sns:ap-southeast-1:267583709295:general-notification"
   schedule_expression = "rate(5 minutes)"
-  
+
+
 }

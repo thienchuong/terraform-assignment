@@ -51,4 +51,5 @@ jobs:
         if: steps.changes.outputs.dev == 'true'
         working-directory: env/dev
         run: |
+          terraform init
           terraform destroy -auto-approve
