@@ -39,18 +39,16 @@ jobs:
             dev:
               - 'env/dev/**'
       
-      - name: AWS dev resources deploy
+      # - name: AWS dev resources deploy
+      #   if: steps.changes.outputs.dev == 'true'
+      #   working-directory: env/dev
+      #   run: |
+      #     terraform init
+      #     terraform plan -no-color
+      #     terraform apply -auto-approve
+  
+      - name: AWS dev resources destroy
         if: steps.changes.outputs.dev == 'true'
         working-directory: env/dev
         run: |
-          terraform init
-          terraform plan -no-color
-          terraform apply -auto-approve
-  
-    #   - name: AWS dev resources destroy
-    #     if: steps.changes.outputs.dev == 'true'
-    #     run: |
-    #       cd env/dev-ap-southeast-1
-    #       terraform init
-    #       terraform plan -no-color
-    #       terraform destroy -auto-approve
+          terraform destroy -auto-approve
